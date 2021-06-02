@@ -90,6 +90,8 @@ class DatasetMapper:
             recompute_boxes = cfg.MODEL.MASK_ON
         else:
             recompute_boxes = False
+        if cfg.INPUT.AUG_MODE == 'DETR':
+            recompute_boxes = True
 
         ret = {
             "is_train": is_train,

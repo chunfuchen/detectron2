@@ -36,6 +36,7 @@ __all__ = [
     "ResizeScale",
     "ResizeShortestEdge",
     "RandomCrop_CategoryAreaConstraint",
+    "RandomSelect"
 ]
 
 
@@ -108,7 +109,7 @@ class RandomFlip(Augmentation):
 class Resize(Augmentation):
     """ Resize image to a fixed target size"""
 
-    def __init__(self, shape, interp=Image.BILINEAR):
+    def __init__(self, shape, interp=Image.BILINEAR, mode=1):
         """
         Args:
             shape: (h, w) tuple or a int
@@ -120,10 +121,43 @@ class Resize(Augmentation):
         self._init(locals())
 
     def get_transform(self, image):
-        return ResizeTransform(
-            image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
-        )
+        #return ResizeTransform(
+        #    image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
+        #)
+        if self.mode == 1:
+            return ResizeTransform(
+                image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
+            )
+        elif self.mode == 2:
+            if image.shape[0] > image.shape[1]:
+                return ResizeTransform(
+                    image.shape[0], image.shape[1], self.shape[1], self.shape[0], self.interp
+                )
+            else:
+                return ResizeTransform(
+                    image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
+                )
+        else:
+            def _round(x):
+                return int(int(x / 224 + 0.5) * 224)
 
+            shorter_side = np.random.choice(self.shape[0])
+            if image.shape[0] > image.shape[1]:
+                longer_side = _round(image.shape[0] / image.shape[1] * shorter_side)
+                if shorter_side <= 0 or longer_side <= 0 or image.shape[0] <= 0 or image.shape[1] <= 0:
+                    print(image.shape, shorter_side, longer_side)
+                return ResizeTransform(
+                    image.shape[0], image.shape[1], longer_side, shorter_side, self.interp
+                )
+            else:
+                longer_side = _round(image.shape[1] / image.shape[0] * shorter_side)
+                if shorter_side <= 0 or longer_side <= 0 or image.shape[0] <= 0 or image.shape[1] <= 0:
+                    print(image.shape, shorter_side, longer_side)
+                return ResizeTransform(
+                    image.shape[0], image.shape[1], shorter_side, longer_side, self.interp
+                )
+            
+                
 
 class ResizeShortestEdge(Augmentation):
     """
@@ -577,3 +611,41 @@ class RandomLighting(Augmentation):
         return BlendTransform(
             src_image=self.eigen_vecs.dot(weights * self.eigen_vals), src_weight=1.0, dst_weight=1.0
         )
+
+
+
+
+## From Detr, modified with detectron2 api
+class RandomSelect(Augmentation):
+    """
+    Randomly apply an augmentation with a given probability.
+    """
+
+    def __init__(self, tfm_or_aug1, tfm_or_aug2, prob=0.5):
+        """
+        Args:
+            tfm_or_aug (Transform, Augmentation): the transform or augmentation
+                to be applied. It can either be a `Transform` or `Augmentation`
+                instance.
+            prob (float): probability between 0.0 and 1.0 that
+                the wrapper transformation is applied
+        """
+        super().__init__()
+        self.aug1 = _transform_to_aug(tfm_or_aug1)
+        self.aug2 = _transform_to_aug(tfm_or_aug2)
+        assert 0.0 <= prob <= 1.0, f"Probablity must be between 0.0 and 1.0 (given: {prob})"
+        self.prob = prob
+
+    def get_transform(self, *args):
+        do = self._rand_range() < self.prob
+        if do:
+            return self.aug1.get_transform(*args)
+        else:
+            return self.aug2.get_transform(*args)
+
+    def __call__(self, aug_input):
+        do = self._rand_range() < self.prob
+        if do:
+            return self.aug1(aug_input)
+        else:
+            return self.aug2(aug_input)
