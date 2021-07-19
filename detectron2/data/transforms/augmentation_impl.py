@@ -121,9 +121,6 @@ class Resize(Augmentation):
         self._init(locals())
 
     def get_transform(self, image):
-        #return ResizeTransform(
-        #    image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
-        #)
         if self.mode == 1:
             return ResizeTransform(
                 image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
@@ -138,24 +135,7 @@ class Resize(Augmentation):
                     image.shape[0], image.shape[1], self.shape[0], self.shape[1], self.interp
                 )
         else:
-            def _round(x):
-                return int(int(x / 224 + 0.5) * 224)
-
-            shorter_side = np.random.choice(self.shape[0])
-            if image.shape[0] > image.shape[1]:
-                longer_side = _round(image.shape[0] / image.shape[1] * shorter_side)
-                if shorter_side <= 0 or longer_side <= 0 or image.shape[0] <= 0 or image.shape[1] <= 0:
-                    print(image.shape, shorter_side, longer_side)
-                return ResizeTransform(
-                    image.shape[0], image.shape[1], longer_side, shorter_side, self.interp
-                )
-            else:
-                longer_side = _round(image.shape[1] / image.shape[0] * shorter_side)
-                if shorter_side <= 0 or longer_side <= 0 or image.shape[0] <= 0 or image.shape[1] <= 0:
-                    print(image.shape, shorter_side, longer_side)
-                return ResizeTransform(
-                    image.shape[0], image.shape[1], shorter_side, longer_side, self.interp
-                )
+            raise ValueError("Unknown mode.")
             
                 
 

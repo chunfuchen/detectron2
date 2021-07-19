@@ -590,19 +590,10 @@ def build_augmentation(cfg, is_train):
         sample_style = "choice"
     if cfg.INPUT.AUG_MODE == 'DETECTRON2':
         augmentation = [T.ResizeShortestEdge(min_size, max_size, sample_style)]
-    elif cfg.INPUT.AUG_MODE == 'FIXED_SIZE':
-        if isinstance(min_size, tuple):
-            min_size = min_size[0]
-        augmentation = [T.Resize((min_size, max_size))]
-    elif cfg.INPUT.AUG_MODE == 'FIXED_SIZE_2':
+    elif cfg.INPUT.AUG_MODE == 'FIXED':
         if isinstance(min_size, tuple):
             min_size = min_size[0]
         augmentation = [T.Resize((min_size, max_size), mode=2)]
-    elif cfg.INPUT.AUG_MODE == 'FIXED_SIZE_MS' and False:
-        if is_train:
-            augmentation = [T.Resize((min_size, max_size), mode=3)]
-        else:
-            augmentation = [T.Resize((min_size, max_size), mode=2)]
     elif cfg.INPUT.AUG_MODE == 'DETR' and is_train:
         crop = T.AugmentationList([
             T.ResizeShortestEdge([400, 500, 600], sample_style='choice'),
